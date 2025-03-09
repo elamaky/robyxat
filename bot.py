@@ -1,62 +1,48 @@
-
-import random
-from flask import Flask, jsonify
+from flask import Flask, render_template, request
 import requests
-
-# Tvoj API ključ (ubaci tvoj stvarni ključ ovde)
-API_KEY = '875c9d3a9f638bd1'  # Tvoj API ključ
-XAT_API_URL = 'https://xat.com/web_gear/chat/'
-
-# Lista imena i avatara
-imena_za_botove = [
-    "Ana", "Lana", "Maja", "Jelena", "Ivana", "Milena", "Sanja", "Katarina", "Marija", "Tina",
-    "Petra", "Nina", "Ivona", "Mina", "Jovana", "Marko", "Nikola", "Vuk", "Luka", "Stefan",
-    "David", "Filip", "Nemanja", "Andrej", "Bogdan", "Vladimir", "Aleksandar"
-]
-
-# Avatar linkovi (možeš zameniti sa svojim)
-avatare = [
-    "https://xat.com/web_gear/chat/avatars/1.png",
-    "https://xat.com/web_gear/chat/avatars/2.png",
-    "https://xat.com/web_gear/chat/avatars/3.png",
-    # Dodaj više avatara po izboru
-]
 
 app = Flask(__name__)
 
-# Funkcija za postavljanje imena i avatara bota
-def postavi_bota(imena, avatar):
-    bot_name = random.choice(imena)  # Random ime za bota
-    bot_avatar = random.choice(avatar)  # Random avatar za bota
+# Xat API ključ (zameni sa stvarnim API ključem)
+API_KEY = '875c9d3a9f638bd1'  # Tvoj stvarni API ključ
 
-    data = {
-        'api_key': API_KEY,
-        'name': bot_name,
-        'avatar': bot_avatar,
+# Lista botova sa imenom, avatarom i porukom
+botovi = [
+    {"ime": "Ana", "avatar": "https://xat.com/web_gear/chat/avatars/1.png", "poruka": "Pozdrav!"},
+    {"ime": "Marko", "avatar": "https://xat.com/web_gear/chat/avatars/2.png", "poruka": "Dobrodošao!"}
+]
+
+# Ruta za početnu stranicu
+@app.route('/')
+def home():
+    return render_template('index.html', botovi=botovi)
+
+# Ruta za dodavanje novog bota
+@app.route('/add_bot', methods=['POST'])
+def add_bot():
+    ime = request.form['ime']
+    avatar = request.form['avatar']
+    poruka = request.form['poruka']
+    botovi.append({"ime": ime, "avatar": avatar, "poruka": poruka})
+
+    # Pozivanje Xat API-ja da pošalje poruku
+    posalji_poruku_na_xat(ime, poruka)
+
+    return render_template('index.html', botovi=botovi)
+
+# Funkcija za slanje poruke na Xat chat
+def posalji_poruku_na_xat(bot_ime, poruka):
+    url = "https://xat.com/web_gear/chat/send_message.php"
+    params = {
+        "api_key": API_KEY,  # Tvoj API ključ
+        "bot_name": bot_ime,
+        "message": poruka
     }
-
-    response = requests.post(f"{XAT_API_URL}/setbot", data=data)
+    response = requests.post(url, params=params)
     if response.status_code == 200:
-        print(f"Bot {bot_name} sa avatarom {bot_avatar} postavljen.")
+        print(f"Poruka od {bot_ime}: '{poruka}' je poslana.")
     else:
-        print("Greška prilikom postavljanja bota:", response.text)
-
-# Web route za generisanje botova
-@app.route('/generate_bots', methods=['GET'])
-def generate_bots():
-    botovi = []
-    for i in range(25):
-        bot_name = random.choice(imena_za_botove)
-        bot_avatar = random.choice(avatare)
-        postavi_bota(imena_za_botove, avatare)  # Postavi bota putem API-ja
-        botovi.append({'name': bot_name, 'avatar': bot_avatar})
-    
-    return jsonify({"botovi": botovi})
-
-# Pozdrav za goste
-@app.route('/greeting', methods=['GET'])
-def greeting():
-    return jsonify({"message": "Bot će pozdraviti nove korisnike kada se pridruže."})
+        print(f"Greška pri slanju poruke: {response.text}")
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
