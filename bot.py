@@ -1,48 +1,45 @@
-from flask import Flask, render_template, request
 import requests
-
-app = Flask(__name__)
+import random
+import time
 
 # Tvoj API ključ
-API_KEY = '1014faacbd7a10ce'
+API_KEY = '1014faacbd7a10ce'  # Zameniti sa tvojim stvarnim ključem
+XAT_API_URL = 'https://xat.com/web_gear/chat/setbot'  # Xat API endpoint
 
-# Lista botova sa imenom, avatarom i porukom
-botovi = [
-    {"ime": "Ana", "avatar": "https://xat.com/web_gear/chat/avatars/1.png", "poruka": "Pozdrav!"},
-    {"ime": "Marko", "avatar": "https://xat.com/web_gear/chat/avatars/2.png", "poruka": "Dobrodošao!"}
+# Lista imena i avataara
+imena_za_botove = [
+    "Ana", "Lana", "Maja", "Jelena", "Ivana", "Milena", "Sanja", "Katarina", "Marija", "Tina",
+    "Petra", "Nina", "Ivona", "Mina", "Jovana", "Marko", "Nikola", "Vuk", "Luka", "Stefan",
+    "David", "Filip", "Nemanja", "Andrej", "Bogdan", "Vladimir", "Aleksandar"
 ]
 
-# Ruta za početnu stranicu
-@app.route('/')
-def home():
-    return render_template('index.html', botovi=botovi)
+# Avatar linkovi
+avatare = [
+    "https://xat.com/web_gear/chat/avatars/1.png",
+    "https://xat.com/web_gear/chat/avatars/2.png",
+    "https://xat.com/web_gear/chat/avatars/3.png",
+    # Dodaj više avatara po izboru
+]
 
-# Ruta za dodavanje novog bota
-@app.route('/add_bot', methods=['POST'])
-def add_bot():
-    ime = request.form['ime']
-    avatar = request.form['avatar']
-    poruka = request.form['poruka']
-    botovi.append({"ime": ime, "avatar": avatar, "poruka": poruka})
+# Funkcija za postavljanje bota
+def postavi_bota(imena, avatar):
+    bot_name = random.choice(imena)  # Random ime za bota
+    bot_avatar = random.choice(avatar)  # Random avatar za bota
 
-    # Pozivanje Xat API-ja da pošalje poruku
-    posalji_poruku_na_xat(ime, poruka)
-
-    return render_template('index.html', botovi=botovi)
-
-# Funkcija za slanje poruke na Xat chat
-def posalji_poruku_na_xat(bot_ime, poruka):
-    url = "https://xat.com/web_gear/chat/send_message.php"
-    params = {
-        "api_key": API_KEY,  # Tvoj API ključ
-        "bot_name": bot_ime,
-        "message": poruka
+    data = {
+        'api_key': API_KEY,  # Tvoj API ključ
+        'name': bot_name,
+        'avatar': bot_avatar,
     }
-    response = requests.post(url, params=params)
-    if response.status_code == 200:
-        print(f"Poruka od {bot_ime}: '{poruka}' je poslana.")
-    else:
-        print(f"Greška pri slanju poruke: {response.text}")
 
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    response = requests.post(XAT_API_URL, data=data)
+
+    if response.status_code == 200:
+        print(f"Bot {bot_name} sa avatarom {bot_avatar} postavljen.")
+    else:
+        print(f"Greška prilikom postavljanja bota: {response.text}")
+
+# Kreiraj botove
+for i in range(25):  # Postavi 25 botova
+    postavi_bota(imena_za_botove, avatare)
+    time.sleep(1)  # Pauza između svakog bota
