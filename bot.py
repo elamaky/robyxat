@@ -1,12 +1,13 @@
-import requests
+
 import random
-import time
+from flask import Flask, jsonify
+import requests
 
 # Tvoj API ključ (ubaci tvoj stvarni ključ ovde)
 API_KEY = '875c9d3a9f638bd1'  # Tvoj API ključ
 XAT_API_URL = 'https://xat.com/web_gear/chat/'
 
-# Lista imena i avataara
+# Lista imena i avatara
 imena_za_botove = [
     "Ana", "Lana", "Maja", "Jelena", "Ivana", "Milena", "Sanja", "Katarina", "Marija", "Tina",
     "Petra", "Nina", "Ivona", "Mina", "Jovana", "Marko", "Nikola", "Vuk", "Luka", "Stefan",
@@ -20,6 +21,8 @@ avatare = [
     "https://xat.com/web_gear/chat/avatars/3.png",
     # Dodaj više avatara po izboru
 ]
+
+app = Flask(__name__)
 
 # Funkcija za postavljanje imena i avatara bota
 def postavi_bota(imena, avatar):
@@ -38,17 +41,22 @@ def postavi_bota(imena, avatar):
     else:
         print("Greška prilikom postavljanja bota:", response.text)
 
-# Pozdrav za nove korisnike
-def pozdrav_za_goste():
-    print("Bot će pozdraviti nove korisnike kada se pridruže.")
-    # Ovo je samo simulacija, Xat API podržava automatsko slanje poruka kad neko uđe
-    # Slično kao:
-    # xat.chat.on('join', lambda user: xat.chat.send(f"Pozdrav {user.username}!"))
-
-# Postavi 25 botova
-for i in range(25):
-    postavi_bota(imena_za_botove, avatare)
-    time.sleep(1)  # Pauza između svakog bota
+# Web route za generisanje botova
+@app.route('/generate_bots', methods=['GET'])
+def generate_bots():
+    botovi = []
+    for i in range(25):
+        bot_name = random.choice(imena_za_botove)
+        bot_avatar = random.choice(avatare)
+        postavi_bota(imena_za_botove, avatare)  # Postavi bota putem API-ja
+        botovi.append({'name': bot_name, 'avatar': bot_avatar})
+    
+    return jsonify({"botovi": botovi})
 
 # Pozdrav za goste
-pozdrav_za_goste()
+@app.route('/greeting', methods=['GET'])
+def greeting():
+    return jsonify({"message": "Bot će pozdraviti nove korisnike kada se pridruže."})
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)
