@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Botovi</title>
+</head>
+<body>
+    <h1>Lista Botova</h1>
+    <table border="1">
+        <tr>
+            <th>Ime</th>
+            <th>Avatar</th>
+            <th>Poruka</th>
+        </tr>
+        {% for bot in botovi %}
+        <tr>
+            <td>{{ bot.ime }}</td>
+            <td><img src="{{ bot.avatar }}" alt="Avatar" width="50"></td>
+            <td>{{ bot.poruka }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h2>Dodaj novog bota</h2>
+    <form method="POST" action="/add_bot">
+        <label for="ime">Ime bota:</label><br>
+        <input type="text" id="ime" name="ime" required><br><br>
+        <label for="avatar">Avatar URL:</label><br>
+        <input type="text" id="avatar" name="avatar" required><br><br>
+        <label for="poruka">Poruka:</label><br>
+        <input type="text" id="poruka" name="poruka" required><br><br>
+        <input type="submit" value="Dodaj bota">
+    </form>
+</body>
+</html>
