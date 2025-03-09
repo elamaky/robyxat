@@ -3,8 +3,8 @@ import requests
 
 app = Flask(__name__)
 
-# Xat API ključ (zameni sa stvarnim API ključem)
-API_KEY = '875c9d3a9f638bd1'  # Tvoj stvarni API ključ
+# Tvoj API ključ
+API_KEY = '1014faacbd7a10ce'
 
 # Lista botova sa imenom, avatarom i porukom
 botovi = [
