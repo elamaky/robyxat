@@ -22,12 +22,14 @@ CHAT_ID = dohvati_chat_id(CHAT_NAME)
 
 # Funkcija za preuzimanje podataka iz HTML fajla
 def preuzmi_botove_iz_html():
-    # Ako je fajl "index.html", pročitaj ga
-    if os.path.exists('index.html'):
-        with open('index.html', 'r', encoding='utf-8') as file:
+    # Putanja do fajla index.html unutar foldera templates
+    file_path = os.path.join('templates', 'index.html')
+    
+    if os.path.exists(file_path):
+        with open(file_path, 'r', encoding='utf-8') as file:
             html_content = file.read()
     else:
-        print("Fajl 'index.html' nije pronađen.")
+        print(f"Fajl '{file_path}' nije pronađen.")
         return []
 
     soup = BeautifulSoup(html_content, 'html.parser')
