@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 import time
+import os
 
 # Tvoj API ključ
 API_KEY = '1014faacbd7a10ce'  # Zameniti sa tvojim stvarnim ključem
@@ -21,8 +22,13 @@ CHAT_ID = dohvati_chat_id(CHAT_NAME)
 
 # Funkcija za preuzimanje podataka iz HTML fajla
 def preuzmi_botove_iz_html():
-    with open('botovi.html', 'r', encoding='utf-8') as file:
-        html_content = file.read()
+    # Ako je fajl "index.html", pročitaj ga
+    if os.path.exists('index.html'):
+        with open('index.html', 'r', encoding='utf-8') as file:
+            html_content = file.read()
+    else:
+        print("Fajl 'index.html' nije pronađen.")
+        return []
 
     soup = BeautifulSoup(html_content, 'html.parser')
     botovi = []
