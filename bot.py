@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, render_template
 from flask_socketio import SocketIO, emit
 
 app = Flask(__name__)
@@ -7,28 +7,26 @@ socketio = SocketIO(app)
 # Memorija za čuvanje trenutnih botova (dok traje sesija)
 bots = {}
 
-# Ruta za glavnu stranicu (ako želiš da imaš HTML stranicu)
+# Ruta za glavnu stranicu - učitaj HTML iz templates foldera
 @app.route('/')
 def index():
-    return "Bot aplikacija je pokrenuta!"
+    return render_template("index.html")  # Vraća index.html iz templates foldera
 
 # Događaj za dodavanje bota
 @socketio.on("add_bot")
 def handle_add_bot(data):
-    # Dodavanje bota u memoriju
     bot_id = data["id"]
     bots[bot_id] = {"name": data["name"], "color": data["color"]}
     print(f"Bot added: {bots[bot_id]}")
-    emit("bot_added", data, broadcast=True)  # Obavesti sve klijente da je bot dodat
+    emit("bot_added", data, broadcast=True)
 
 # Događaj za uklanjanje bota
 @socketio.on("remove_bot")
 def handle_remove_bot(bot_id):
-    # Uklanjanje bota iz memorije
     if bot_id in bots:
         del bots[bot_id]
         print(f"Bot removed: {bot_id}")
-        emit("bot_removed", bot_id, broadcast=True)  # Obavesti sve klijente da je bot uklonjen
+        emit("bot_removed", bot_id, broadcast=True)
 
 # Pokretanje servera
 if __name__ == '__main__':
