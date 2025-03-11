@@ -1,74 +1,46 @@
-import requests
-from bs4 import BeautifulSoup
-import time
-import os
+from flask import Flask, render_template
+from flask_socketio import SocketIO, emit, join_room
+from chatterbot import ChatBot
+from chatterbot.trainers import ChatterBotCorpusTrainer
 
-# Tvoj API ključ
-API_KEY = '1014faacbd7a10ce'  # Zameniti sa tvojim stvarnim ključem
-XAT_API_URL = 'https://xat.com/web_gear/chat/setbot'  # Xat API endpoint
-CHAT_NAME = "RadioProkuplje"  # Promeni na svoj chat
+app = Flask(__name__)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
-# Funkcija za dobijanje Chat ID-a
-def dohvati_chat_id(chat_ime):
-    response = requests.get(f"https://xat.com/web_gear/chat/roomid.php?d={chat_ime}")
-    if response.status_code == 200 and response.text.isdigit():
-        return response.text.strip()
-    else:
-        print("Greška prilikom dobijanja Chat ID-a:", response.text)
-        return None
+# Kreiranje bota
+bot = ChatBot("ChatBot")
+trainer = ChatterBotCorpusTrainer(bot)
+trainer.train("chatterbot.corpus.english")
 
-# Dobijanje Chat ID-a
-CHAT_ID = dohvati_chat_id(CHAT_NAME)
+bots = {}
 
-# Funkcija za preuzimanje podataka iz HTML fajla
-def preuzmi_botove_iz_html():
-    # Putanja do fajla index.html unutar foldera templates
-    file_path = os.path.join('templates', 'index.html')
-    
-    if os.path.exists(file_path):
-        with open(file_path, 'r', encoding='utf-8') as file:
-            html_content = file.read()
-    else:
-        print(f"Fajl '{file_path}' nije pronađen.")
-        return []
+@app.route('/')
+def index():
+    return render_template('index.html')
 
-    soup = BeautifulSoup(html_content, 'html.parser')
-    botovi = []
+@socketio.on("add_bot")
+def handle_add_bot(data):
+    bot_id = data["id"]
+    bots[bot_id] = {"name": data["name"], "color": data["color"]}
+    emit("bot_added", data, broadcast=True)
 
-    # Preuzimamo podatke iz tabele
-    for row in soup.find_all('tr')[1:]:  # Preskočimo prvi red (zaglavlje)
-        columns = row.find_all('td')
-        ime = columns[0].text.strip()
-        avatar = columns[1].text.strip()
-        poruka = columns[2].text.strip()
-        botovi.append({'ime': ime, 'avatar': avatar, 'poruka': poruka})
+@socketio.on("remove_bot")
+def handle_remove_bot(bot_id):
+    if bot_id in bots:
+        del bots[bot_id]
+        emit("bot_removed", bot_id, broadcast=True)
 
-    return botovi
+@socketio.on("update_bot")
+def handle_update_bot(data):
+    if data["id"] in bots:
+        bots[data["id"]]["color"] = data["color"]
+        emit("bot_updated", data, broadcast=True)
 
-# Funkcija za postavljanje bota
-def postavi_bota(bot):
-    if not CHAT_ID:
-        print("Neuspešno dobijanje Chat ID-a. Bot se ne može postaviti.")
-        return
+@socketio.on("user_message")
+def handle_message(data):
+    if data["bot_id"] in bots:
+        response = bot.get_response(data["message"])
+        emit("bot_response", {"bot_id": data["bot_id"], "message": str(response)}, broadcast=True)
 
-    data = {
-        'api_key': API_KEY,
-        'name': bot['ime'],
-        'avatar': bot['avatar'],
-        'roomid': CHAT_ID,  # Dodajemo Chat ID
-    }
+if __name__ == '__main__':
+    socketio.run(app, host="0.0.0.0", port=5000, debug=True)
 
-    response = requests.post(XAT_API_URL, data=data)
-
-    if response.status_code == 200:
-        print(f"Bot {bot['ime']} postavljen u chat {CHAT_NAME}.")
-    else:
-        print(f"Greška prilikom postavljanja bota: {response.text}")
-
-# Preuzimamo podatke o botovima iz HTML fajla
-botovi = preuzmi_botove_iz_html()
-
-# Postavljamo botove
-for bot in botovi:
-    postavi_bota(bot)
-    time.sleep(1)  # Pauza između svakog bota
