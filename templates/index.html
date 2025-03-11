@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bot Management</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.3/socket.io.min.js"></script>
+    <title>Bot Aplikacija</title>
     <style>
         body {
             background-color: black;
@@ -14,141 +13,121 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid white;
         }
         th, td {
             padding: 10px;
             text-align: left;
-            border: 1px solid white;
         }
-        th {
-            background-color: #333;
-        }
-        td {
-            background-color: #222;
-        }
-        input, select {
-            background-color: #333;
-            color: white;
-            border: 1px solid #444;
-            padding: 5px;
-        }
-        button {
-            background-color: #111;
-            color: #00FF00;
-            border: 2px solid #00FF00;
-            padding: 10px 20px;
+        .btn {
+            background-color: black;
+            color: neon;
+            padding: 10px;
+            border: 1px solid neon;
             cursor: pointer;
+            transition: background-color 0.3s ease;
         }
-        button:hover {
-            background-color: #00FF00;
+        .btn:hover {
+            background-color: neon;
             color: black;
+        }
+        .input {
+            background-color: black;
+            color: white;
+            border: 1px solid white;
+            padding: 10px;
         }
     </style>
 </head>
 <body>
 
-    <h2>Bot Management</h2>
+<h2>Bot Aplikacija</h2>
 
-    <table id="botsTable">
-        <thead>
-            <tr>
-                <th>Bot Name</th>
-                <th>Bot Color</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Bot rows will be added here -->
-        </tbody>
-    </table>
+<table id="botTable">
+    <thead>
+        <tr>
+            <th>Ime Bota</th>
+            <th>Boja</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Dinamički se dodaju botovi -->
+    </tbody>
+</table>
 
-    <h3>Add New Bot</h3>
-    <label for="botName">Bot Name:</label>
-    <input type="text" id="botName" placeholder="Enter bot name" required>
-    <label for="botColor">Bot Color:</label>
-    <input type="color" id="botColor" value="#ff0000" required>
-    <button id="addBotBtn">Add Bot</button>
+<h3>Dodaj Bota</h3>
+<input type="text" id="botNameInput" class="input" placeholder="Ime bota">
+<input type="color" id="botColorInput" class="input" value="#ff0000">
+<button id="addBotBtn" class="btn">Dodaj Bota</button>
 
-    <script>
-        const socket = io();
+<h3>Ukloni Bota</h3>
+<input type="text" id="botIdInput" class="input" placeholder="ID bota za uklanjanje">
+<button id="removeBotBtn" class="btn">Ukloni Bota</button>
 
-        const addBotBtn = document.getElementById("addBotBtn");
-        const botNameInput = document.getElementById("botName");
-        const botColorInput = document.getElementById("botColor");
-        const botsTable = document.getElementById("botsTable").getElementsByTagName('tbody')[0];
+<script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+<script>
+// Povezivanje sa Socket.IO serverom tvoje glavne aplikacije
+const socket = io("https://radiogalaksija.onrender.com");
 
-        addBotBtn.addEventListener("click", function() {
-            const botName = botNameInput.value.trim();
-            const botColor = botColorInput.value;
+// Elementi sa stranice
+const addBotBtn = document.getElementById("addBotBtn");
+const removeBotBtn = document.getElementById("removeBotBtn");
+const botNameInput = document.getElementById("botNameInput");
+const botColorInput = document.getElementById("botColorInput");
+const botTable = document.getElementById("botTable").getElementsByTagName("tbody")[0];
+const botIdInput = document.getElementById("botIdInput");
 
-            if (botName) {
-                const botData = { id: Date.now(), name: botName, color: botColor };
-                socket.emit("add_bot", botData);
-                addBotRow(botData);
-                botNameInput.value = ''; // Reset input field
-            }
-        });
+// Dodavanje bota
+addBotBtn.addEventListener("click", function() {
+    const botName = botNameInput.value.trim();
+    const botColor = botColorInput.value;
 
-        socket.on("bot_added", function(data) {
-            addBotRow(data);
-        });
+    if (botName) {
+        const botData = { id: Date.now(), name: botName, color: botColor };
+        socket.emit("add_bot", botData);  // Pošaljemo zahtev za dodavanje bota
+        addBotRow(botData);  // Dodajemo bota u tabelu na frontend-u
+        botNameInput.value = ''; // Resetujemo input
+    }
+});
 
-        function addBotRow(botData) {
-            const row = botsTable.insertRow();
-            row.id = "bot-" + botData.id;
+// Uklanjanje bota
+removeBotBtn.addEventListener("click", function() {
+    const botId = botIdInput.value.trim();  // ID bota koji želimo ukloniti
+    if (botId) {
+        socket.emit("remove_bot", botId);  // Pošaljemo zahtev za uklanjanje bota
+        removeBotRow(botId);  // Uklanjamo bota sa frontend-a
+        botIdInput.value = ''; // Resetujemo input
+    }
+});
 
-            const nameCell = row.insertCell(0);
-            nameCell.textContent = botData.name;
+// Funkcija za dodavanje bota u tabelu
+function addBotRow(botData) {
+    const row = document.createElement("tr");
+    row.id = botData.id;
+    row.innerHTML = `<td>${botData.name}</td><td style="background-color:${botData.color}">${botData.color}</td>`;
+    botTable.appendChild(row);
+}
 
-            const colorCell = row.insertCell(1);
-            colorCell.textContent = botData.color;
-            colorCell.style.backgroundColor = botData.color;
+// Funkcija za uklanjanje bota iz tabele
+function removeBotRow(botId) {
+    const row = document.getElementById(botId);
+    if (row) {
+        botTable.removeChild(row);
+    }
+}
 
-            const actionsCell = row.insertCell(2);
-            actionsCell.innerHTML = `
-                <button onclick="editBot(${botData.id})">Edit</button>
-                <button onclick="removeBot(${botData.id})">Remove</button>
-            `;
-        }
+// Prijem događaja za dodavanje bota sa servera
+socket.on("bot_added", function(data) {
+    addBotRow(data);  // Dodajemo bota u tabelu na frontend-u
+});
 
-        function removeBot(botId) {
-            socket.emit("remove_bot", botId);
-            const row = document.getElementById("bot-" + botId);
-            row.remove();
-        }
-
-        socket.on("bot_removed", function(botId) {
-            const row = document.getElementById("bot-" + botId);
-            row.remove();
-        });
-
-        function editBot(botId) {
-            const row = document.getElementById("bot-" + botId);
-            const nameCell = row.cells[0];
-            const colorCell = row.cells[1];
-
-            const newName = prompt("Edit Bot Name:", nameCell.textContent);
-            const newColor = prompt("Edit Bot Color (Hex):", colorCell.style.backgroundColor);
-
-            if (newName && newColor) {
-                nameCell.textContent = newName;
-                colorCell.style.backgroundColor = newColor;
-
-                const data = { id: botId, name: newName, color: newColor };
-                socket.emit("update_bot", data);
-            }
-        }
-
-        socket.on("bot_updated", function(data) {
-            const row = document.getElementById("bot-" + data.id);
-            const nameCell = row.cells[0];
-            const colorCell = row.cells[1];
-
-            nameCell.textContent = data.name;
-            colorCell.style.backgroundColor = data.color;
-        });
-    </script>
+// Prijem događaja za uklanjanje bota sa servera
+socket.on("bot_removed", function(botId) {
+    removeBotRow(botId);  // Uklanjamo bota iz tabele na frontend-u
+});
+</script>
 
 </body>
 </html>
